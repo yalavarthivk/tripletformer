@@ -47,18 +47,7 @@ if __name__ == '__main__':
     dim = data_obj["input_dim"]
     union_tp = None
     early_stop = 0
-    net = TRIPLETFORMER(input_dim=dim,
-            enc_num_heads=args.enc_num_heads,
-            dec_num_heads=args.dec_num_heads,
-            num_ref_points=args.num_ref_points,
-            mse_weight=args.mse_weight,
-            norm=args.norm,
-            imab_dim = args.imab_dim,
-            cab_dim = args.cab_dim,
-            decoder_dim = args.decoder_dim,
-            n_layers=args.nlayers,
-            device=device
-            ).to(device)
+    net = models.load_network(args, dim, device=device).to(device)
 
     params = list(net.parameters())
     optimizer = optim.Adam(params, lr=args.lr)
@@ -68,7 +57,7 @@ if __name__ == '__main__':
     for itr in range(1, args.niters + 1):
         train_loss = 0
         train_n = 0
-        avg_loglik, mse, mae = 0, 0, 0, 0
+        avg_loglik, mse, mae = 0, 0, 0
 
         for train_batch in train_loader:
             batch_len = train_batch.shape[0]
@@ -101,7 +90,7 @@ if __name__ == '__main__':
             )
             optimizer.zero_grad()
             loss_info.composite_loss.backward()
-            torch.nn.utils.clip_grad_norm(net.parameters(), 1)
+            torch.nn.utils.clip_grad_norm_(net.parameters(), 1)
             optimizer.step()
             train_loss += loss_info.composite_loss.item() * batch_len
             avg_loglik += loss_info.loglik * batch_len

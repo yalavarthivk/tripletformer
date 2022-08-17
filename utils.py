@@ -88,21 +88,20 @@ def evaluate_model(
 
 def get_dataset(batch_size, dataset, test_batch_size=5, filter_anomalies=True):
     if dataset == 'physionet':
-        x = np.load("/home/yalavarthi/interpol/hetvae/data/physionet.npz")
+        x = np.load("/home/yalavarthi/Desktop/codes_github/tripletformer/data_lib/physionet.npz")
     elif dataset == 'mimiciii':
-        x = np.load("/home/yalavarthi/interpol/hetvae/data/mimiciii.npz")
-    elif dataset == 'FaceDetection':
-        x = np.load("/home/yalavarthi/interpol/hetvae/data/FaceDetection.npz")
+        x = np.load("home/yalavarthi/Desktop/codes_github/tripletformer/data_lib/mimiciii.npz")
     elif dataset == 'PenDigits':
-        x = np.load("/home/yalavarthi/interpol/hetvae/data/PenDigits.npz")
+        x = np.load("/home/yalavarthi/Desktop/codes_github/tripletformer/data_lib/PenDigits.npz")
     elif dataset == 'physionet2019':
-        x = np.load("/home/yalavarthi/interpol/hetvae/data/physionet2019.npz")
+        x = np.load("/home/yalavarthi/Desktop/codes_github/tripletformer/data_lib/physionet2019.npz")
     elif dataset == 'PhonemeSpectra':
-        x = np.load("/home/yalavarthi/interpol/hetvae/data/PhonemeSpectra.npz")
+        x = np.load("/home/yalavarthi/Desktop/codes_github/tripletformer/data_lib/PhonemeSpectra.npz")
     else:
         print("No dataset found")
+    input_dim = (x['train'].shape[-1] - 1)//2
     train_data, val_data, test_data = x['train'], x['val'], x['test']
-    input_dim = (train_data[-1] - 1)//2
+
 
     print(train_data.shape, val_data.shape, test_data.shape)
 

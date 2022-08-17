@@ -1,4 +1,5 @@
-from tripletformer import TRIPLE
+from tripletformer import TRIPLETFORMER
+import pdb
 def load_network(args, dim, device="cuda"):
     if args.net == 'triple':
         net = TRIPLETFORMER(

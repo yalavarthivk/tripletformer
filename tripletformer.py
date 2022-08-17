@@ -1,10 +1,10 @@
-# pylint: disable=E1101
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import utils
 import layers
+import pdb
 
 class Gaussian:
     mean = None
@@ -18,9 +18,10 @@ class LossInfo:
 
 
 class TRIPLETFORMER(nn.Module):
+
     def __init__(
         self,
-        input_dim=None,
+        input_dim=41,
         enc_num_heads=4,
         dec_num_heads=4,
         num_ref_points=128,
@@ -30,24 +31,22 @@ class TRIPLETFORMER(nn.Module):
         cab_dim = 128,
         decoder_dim = 128,
         n_layers=2,
-        device='cuda',
-    ):
+        device='cuda'):
         super().__init__()
-
-        self.input_dim=None,
-        self.enc_num_heads=enc_num_heads,
-        self.dec_num_heads=dec_num_heads,
-        self.num_ref_points=num_ref_points,
-        self.mse_weight=mse_weight,
-        self.norm=norm,
-        self.imab_dim = imab_dim,
-        self.cab_dim = cab_dim,
-        self.decoder_dim = decoder_dim,
-        self.n_layers=n_layers,
+        self.dim=input_dim
+        self.enc_num_heads=enc_num_heads
+        self.dec_num_heads=dec_num_heads
+        self.num_ref_points=num_ref_points
+        self.mse_weight=mse_weight
+        self.norm=norm
+        self.imab_dim = imab_dim
+        self.cab_dim = cab_dim
+        self.decoder_dim = decoder_dim
+        self.n_layers=n_layers
         self.device=device
-        self.enc = utils_prop_att.Encoder(self.dim, self.imab_dim, self.n_layers, self.num_ref_points, self.enc_num_heads, device=device)
-        self.dec_att = utils_prop_att.Decoder_att(self.dim, self.imab_dim, self.cab_dim, self.dec_num_heads, device=device)
-        self.O = utils_prop_att.output(self.cab_dim, self.decoder_dim, device=device)
+        self.enc = layers.Encoder(self.dim, self.imab_dim, self.n_layers, self.num_ref_points, self.enc_num_heads, device=device)
+        self.dec_att = layers.Decoder_att(self.dim, self.imab_dim, self.cab_dim, self.dec_num_heads, device=device)
+        self.O = layers.output(self.cab_dim, self.decoder_dim, device=device)
 
     def encode(self, context_x, context_w, target_x):
         mask = context_w[:, :, self.dim:]
@@ -110,7 +109,7 @@ class TRIPLETFORMER(nn.Module):
         C = torch.nn.functional.one_hot(C, num_classes =self.dim)
 
         target_context = torch.cat([tau[:,:,None], C], -1).contiguous()
-        target_mask = torch.stack([C_, t_m], -1)
+        target_mask = torch.stack([C_, mk], -1)
 
         obs_len = torch.max(target_mask[:,:,1].sum(-1)).to(torch.int64)
         target_context = target_context[:, :obs_len]
@@ -119,7 +118,7 @@ class TRIPLETFORMER(nn.Module):
 
         mask = torch.cat([target_vals[:,:,None], target_mask[:,:,1:]],-1)
 
-        px = self.get_interpolation(context_x, context_y, target_x, num_samples, target_context, target_mask)
+        px = self.get_interpolation(context_x, context_y, target_x, target_context, target_mask)
         
         self.dim2 = 1
 

@@ -3,31 +3,31 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from attention import MultiHeadAttention, IMAB
-
+import pdb
 
 class output(nn.Module):
     def __init__(self, dim=128, nkernel=128, nlayers=1, device='cuda'):
         super(output, self).__init__()
         self.device=device
         self.nlayers=nlayers
-        self.oFF = nn.ModuleList()
+        self.dense = nn.ModuleList()
         self.dim = dim
         self.nkernel=nkernel
         for i in range(self.nlayers):
-            self.oFF.append(nn.Linear(dim, nkernel))
+            self.dense.append(nn.Linear(dim, nkernel))
             dim = nkernel
         self.dense.append(nn.Linear(dim,2))
         self.relu = nn.ReLU()
     def forward(self, Z_d):
         for i in range(self.nlayers):
-            Z_d = self.relu(self.oFF[i](Z_d))
-        U_ = self.oFF[-1](Z_d)
-        return U_
+            hid = self.relu(self.dense[i](Z_d))
+        parameters = self.dense[-1](hid)
+        return parameters
 
 
 
 class Encoder(nn.Module):
-    def __init__(self, dim=None, nkernel = 128, n_layers=3, n_ref_points=128, enc_num_heads = 4, device="cuda"):
+    def __init__(self, dim = 41, nkernel = 128, n_layers=3, n_ref_points=128, enc_num_heads = 4, device="cuda"):
         super(Encoder, self).__init__()
         self.dim = dim+2
         self.nheads = enc_num_heads
@@ -35,11 +35,7 @@ class Encoder(nn.Module):
         self.n_layers = n_layers
         self.SAB = nn.ModuleList()
         for i in range(self.n_layers):
-            if i == 0:
-                ndim = self.dim
-            else:
-                ndim = nkernel
-            self.SAB.append(IMAB(nkernel, self.nheads, n_ref_points))
+            self.SAB.append(IMAB(nkernel, nkernel, self.nheads, n_ref_points))
         
         self.relu = nn.ReLU()
 
@@ -48,14 +44,14 @@ class Encoder(nn.Module):
         seq_len = context_x.size(-1)
         ndims = value.shape[-1]
 
-        tau = context_x[:,:,None].repeat(1,1,mask.shape[-1])
+        T = context_x[:,:,None].repeat(1,1,mask.shape[-1])
         C = torch.cumsum(torch.ones_like(value).to(torch.int64), -1) - 1
         mk_bool = mask.to(torch.bool)
         full_len = seq_len*mask.size(-1)
         pad = lambda v: F.pad(v, [0, full_len - len(v)], value=0)
 
         T_ = torch.stack([pad(r[m]) for r, m in zip(T, mk_bool)]).contiguous()
-        U_ = torch.stack([pad(r[m]) for r, m in zip(V, mk_bool)]).contiguous()
+        U_ = torch.stack([pad(r[m]) for r, m in zip(value, mk_bool)]).contiguous()
         C_ = torch.stack([pad(r[m]) for r, m in zip(C, mk_bool)]).contiguous()
         mk_ = torch.stack([pad(r[m]) for r, m in zip(mask, mk_bool)]).contiguous()
         
@@ -78,7 +74,7 @@ class Encoder(nn.Module):
         attn_mask = mk_[:,:,0]
         attn_input = Y_e
         for i in range(self.n_layers):
-            Z_e = self.att[i](q = attn_input, k = attn_input, v = attn_input, mask1=attn_mask, mask2=attn_mask)[0]
+            Z_e = self.SAB[i](attn_input, attn_input, mask1=attn_mask, mask2=attn_mask)[0]
             Z_e = Z_e*mk_.repeat([1, 1, Z_e.shape[-1]])
             Z_e = Z_e + attn_input
             attn_input = Z_e
@@ -103,9 +99,7 @@ class Decoder_att(nn.Module):
     def forward(self, Z_e, mk_e, W, target_mask):
 
         mk_d = target_mask[:,:,1:]
-        attn_mask = q_m.matmul(mk_e.transpose(-2,-1).contiguous())
-        
-
+        attn_mask = mk_d.matmul(mk_e.transpose(-2,-1).contiguous())
         Y_d = self.relu(self.oFF(W))
         Z_e_ = self.relu(self.input_dense_key(Z_e))
 
@@ -123,7 +117,7 @@ class Decoder_att(nn.Module):
         Z_d_ = self.relu(Z_d + Y_d)
 
         Z_d__ = self.res_con(Z_d_)
-        Z_d__ *= q_m.repeat(1,1,Z_d__.shape[-1])
+        Z_d__ *= mk_d.repeat(1,1,Z_d__.shape[-1])
         Z_d__ += Z_d_
         Z_d__ = self.relu(Z_d__)
 
