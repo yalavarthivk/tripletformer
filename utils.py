@@ -88,15 +88,15 @@ def evaluate_model(
 
 def get_dataset(batch_size, dataset, test_batch_size=5, filter_anomalies=True):
     if dataset == 'physionet':
-        x = np.load("/home/yalavarthi/interpol/hetvae/data/physionet_2.npz")
+        x = np.load("~/Desktop/codes_github/tripletformer/data_lib/physionet.npz")
     elif dataset == 'mimiciii':
-        x = np.load("home/yalavarthi/Desktop/codes_github/tripletformer/data_lib/mimiciii.npz")
+        x = np.load("~/Desktop/codes_github/tripletformer/data_lib/mimiciii.npz")
     elif dataset == 'PenDigits':
-        x = np.load("/home/yalavarthi/Desktop/codes_github/tripletformer/data_lib/PenDigits.npz")
+        x = np.load("~/Desktop/codes_github/tripletformer/data_lib/PenDigits.npz")
     elif dataset == 'physionet2019':
-        x = np.load("/home/yalavarthi/Desktop/codes_github/tripletformer/data_lib/physionet2019.npz")
+        x = np.load("~/Desktop/codes_github/tripletformer/data_lib/physionet2019.npz")
     elif dataset == 'PhonemeSpectra':
-        x = np.load("/home/yalavarthi/Desktop/codes_github/tripletformer/data_lib/PhonemeSpectra.npz")
+        x = np.load("~/Desktop/codes_github/tripletformer/data_lib/PhonemeSpectra.npz")
     else:
         print("No dataset found")
     input_dim = (x['train'].shape[-1] - 1)//2
