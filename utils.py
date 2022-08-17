@@ -88,7 +88,7 @@ def evaluate_model(
 
 def get_dataset(batch_size, dataset, test_batch_size=5, filter_anomalies=True):
     if dataset == 'physionet':
-        x = np.load("/home/yalavarthi/Desktop/codes_github/tripletformer/data_lib/physionet.npz")
+        x = np.load("/home/yalavarthi/interpol/hetvae/data/physionet_2.npz")
     elif dataset == 'mimiciii':
         x = np.load("home/yalavarthi/Desktop/codes_github/tripletformer/data_lib/mimiciii.npz")
     elif dataset == 'PenDigits':
@@ -211,23 +211,20 @@ def test_result(
                 num_samples=k_iwae
             )
             num_context_points = recon_mask.sum().item()
-            crps += loss_info.crps * num_context_points
             mse += loss_info.mse * num_context_points
             mae += loss_info.mae * num_context_points
-            mean_mse += loss_info.mean_mse * num_context_points
-            mean_mae += loss_info.mean_mae * num_context_points
+           # mean_mse += loss_info.mean_mse * num_context_points
+           # mean_mae += loss_info.mean_mae * num_context_points
             avg_loglik += loss_info.loglik * num_context_points
             # avg_loglik += loss_info.mogloglik * num_context_points
             train_n += num_context_points
     print(
-        'nll: {:.4f}, mse: {:.4f}, mae: {:.4f}, '
-        'mean_mse: {:.4f}, mean_mae: {:.4f}, mean_crps: {:.4f}'.format(
+        'nll: {:.4f}, mse: {:.4f}, mae: {:.4f},'.format(
             - avg_loglik / train_n,
             mse / train_n,
             mae / train_n,
-            mean_mse / train_n,
-            mean_mae / train_n,
-            crps/train_n
+           # mean_mse / train_n,
+           # mean_mae / train_n,
         )
     )
     return -avg_loglik/train_n
